@@ -5,7 +5,7 @@ from PIL import Image
 from nmc_labeling import nmc
 from matplotlib import pyplot as plt
 
-from utilities import format_image
+from utilities import label_image_from_probabilities
 
 
 def estimate_gaussian_distributions(x, labels, n_classes):
@@ -36,17 +36,16 @@ def ml_segmentation(X, labels, return_type='img'):
     logdets = np.array(logdets)        # (n_classes,)
 
     log_probs = log_likelihood(x, channels, means, inv_covs, logdets)
-    segmented_img = np.argmax(log_probs, axis=1)
-    segmented_img = segmented_img.reshape(X.shape[:2])
+    h, w = X.shape[:2]
+    log_probs_img = log_probs.reshape(h, w, n_classes)
 
     if return_type == 'img':
-        return format_image(segmented_img, n_classes)
+        return label_image_from_probabilities(log_probs_img)
 
     elif return_type == 'probs':
         # Convert to probabilities and return
         probs = np.exp(log_probs - log_probs.max(axis=1, keepdims=True))
         probs /= probs.sum(axis=1, keepdims=True)
-        h, w = X.shape[:2]
         return probs.reshape(h, w, n_classes)
 
 

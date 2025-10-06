@@ -4,11 +4,11 @@ from PIL import Image
 
 from ml_labeling import ml_segmentation
 from nmc_labeling import nmc
-from utilities import format_image
+from utilities import format_image, label_image_from_probabilities
 
 shifts = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
 
-def rl_segmentation(probs, n_iter=10):
+def rl_segmentation(probs, n_iter=10, return_type='img'):
 
     h, w, k = probs.shape # height, width and number of classes
     compatibilities = compatibility_matrix(k)
@@ -45,11 +45,11 @@ def rl_segmentation(probs, n_iter=10):
         probs_new /= probs_new.sum(axis=2, keepdims=True)
         probs = probs_new
 
-    Y = relabel(probs)
-    return Y
+    if return_type == 'img':
+        return label_image_from_probabilities(probs)
 
-def relabel(probs):
-    return np.argmax(probs, axis=2)
+    elif return_type == 'probs':
+        return probs
 
 # Simple discrete metric-type compatibility
 def compatibility_matrix(n_classes):
@@ -76,6 +76,6 @@ if __name__ == "__main__":
     X = np.array(img)
     init_labels = nmc(X, n_iter=10, n_classes=3, return_type='raw')
     init_probabilities = ml_segmentation(X, init_labels, return_type='probs')
-    Y = rl_segmentation(init_probabilities, n_iter=50)
-    Y = Image.fromarray(format_image(Y, 3))
+    Y = rl_segmentation(init_probabilities, n_iter=10, return_type='img')
+    Y = Image.fromarray(Y)
     Y.show()
