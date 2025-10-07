@@ -2,10 +2,10 @@ import numpy as np
 
 from PIL import Image
 
-from nmc_labeling import nmc
 from matplotlib import pyplot as plt
 
-from utilities import label_image_from_probabilities
+from segmentation.methods.nmc_labeling import nmc
+from segmentation.utilities import label_image_from_probabilities
 
 
 def estimate_gaussian_distributions(x, labels, n_classes):
@@ -17,24 +17,13 @@ def estimate_gaussian_distributions(x, labels, n_classes):
 
     return means, covs
 
-def ml_segmentation(X, labels, return_type='img'):
+def ml_labeling(X, labels, return_type='img'):
     channels = X.shape[-1] if len(X.shape) > 2 else 1
     x = X.reshape(-1, channels)
     labels = labels.ravel()
     n_classes = len(np.unique(labels))
     means, covs = estimate_gaussian_distributions(x, labels, n_classes) # Mean and variance of each class
-
-    # Precompute inverses and determinants of covariance matrices
-    inv_covs = []
-    logdets = []
-    for cov in covs:
-        cov = cov + 1e-6 * np.eye(channels)  # Simple regularization to avoid errors
-        inv_covs.append(np.linalg.inv(cov))
-        logdets.append(np.log(np.linalg.det(cov)))
-
-    inv_covs = np.stack(inv_covs)      # (n_classes, channels, channels)
-    logdets = np.array(logdets)        # (n_classes,)
-
+    inv_covs, logdets = compute_inverses_and_determinants(covs)
     log_probs = log_likelihood(x, channels, means, inv_covs, logdets)
     h, w = X.shape[:2]
     log_probs_img = log_probs.reshape(h, w, n_classes)
@@ -48,6 +37,18 @@ def ml_segmentation(X, labels, return_type='img'):
         probs /= probs.sum(axis=1, keepdims=True)
         return probs.reshape(h, w, n_classes)
 
+def compute_inverses_and_determinants(covs):
+    inv_covs = []
+    logdets = []
+    for cov in covs:
+        cov = np.atleast_2d(cov)  # fuerza a matriz (1,1) si es escalar
+        cov = cov + 1e-6 * np.eye(cov.shape[0])  # Simple regularization to avoid errors
+        inv_covs.append(np.linalg.inv(cov))
+        logdets.append(np.log(np.linalg.det(cov)))
+    inv_covs = np.stack(inv_covs)  # (n_classes, channels, channels)
+    logdets = np.array(logdets)  # (n_classes,)
+    return inv_covs, logdets
+
 
 def log_likelihood(x, channels, means, inv_covs, logdets):
     # Expand: (N,d) - (K,d) → (N,K,d)
@@ -59,11 +60,11 @@ def log_likelihood(x, channels, means, inv_covs, logdets):
 
 
 if __name__ == '__main__':
-    image_path = 'resources/test_img_3.png'
+    image_path = '../../resources/test_img_3.png'
     img = Image.open(image_path)
     X = np.array(img)
     init_labels = nmc(X, n_iter=10, n_classes=3, return_type='raw')
-    segmented_img = ml_segmentation(X, init_labels, return_type='img')
+    segmented_img = ml_labeling(X, init_labels, return_type='img')
 
     Y = Image.fromarray(segmented_img)
     Y.show()

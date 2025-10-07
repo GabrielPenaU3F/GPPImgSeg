@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
 
-from utilities import format_image
+from segmentation.utilities import format_image
 
 
 def compute_centroids(X, labels, n_classes):
@@ -32,7 +32,7 @@ def nmc(X, n_iter, n_classes, return_type='img'):
     return segmented_img
 
 if __name__ == "__main__":
-    image_path = 'resources/test_img.bmp'
+    image_path = '../../resources/test_img.bmp'
     img = Image.open(image_path)
     X = np.array(img)
     segmented_img = nmc(X, n_iter=20, n_classes=10)
