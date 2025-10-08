@@ -1,3 +1,7 @@
+from PIL import Image
+
+import os
+
 import numpy as np
 
 def format_image(x, n_classes):
@@ -93,3 +97,39 @@ def make_shifts_from_mode(mode='8', radius=None, k=None, distance_fn=None):
             return [offset for _, offset in sorted_pairs[:k]]
 
     raise ValueError(f"Unknown mode={mode}")
+
+def initialize_urns(probs, n_balls=100):
+    h, w, K = probs.shape
+    flat = probs.reshape(-1, K)
+    target = flat * n_balls
+    floor = np.floor(target).astype(int)  # sum <= n_balls. This underestimates
+    rem = (target - floor) # remainder
+    deficit = n_balls - floor.sum(axis=1)  # shape (N,) - how many balls we have yet to assign
+
+    # We assign remaining balls, starting by classes with larger remainders
+    urns = floor.copy()
+    if flat.shape[0] == 1:
+        order = np.argsort(-rem[0])
+        urns[0, order[:deficit[0]]] += 1
+    else:
+        for i, d in enumerate(deficit):
+            if d <= 0:
+                continue
+            order = np.argsort(-rem[i])
+            urns[i, order[:d]] += 1
+
+    return urns.reshape(h, w, K)
+
+def sample_class_from_probs(probs):
+    h, w, k = probs.shape
+    rng = np.random.default_rng()
+    cdf = np.cumsum(probs, axis=2)  # (h, w, k)
+    r = rng.random((h, w, 1))  # (h, w, 1)
+    samples = (cdf > r).argmax(axis=2)
+    return samples
+
+def save_frame(probs, n_frame, save_directory):
+    img = label_image_from_probabilities(probs)
+    frame = Image.fromarray(img)
+    file = os.path.join(save_directory, f'frame_{n_frame:03d}.png')
+    frame.save(file)
