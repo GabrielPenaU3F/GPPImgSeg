@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from segmentation.methods.urn_labeling import update_urns
+from segmentation.methods.urn_labelers import GPPLabeler, PolyaLabeler
 from segmentation.utilities import initialize_urns
 
 
@@ -69,7 +69,7 @@ class TestPolyaUrnUpdate:
             [2, 0]
         ])
         delta = 2
-        updated = update_urns(urns.copy(), sampled_classes, delta)
+        updated = PolyaLabeler().update_urns(urns.copy(), sampled_classes, delta)
 
         # In each position, 2 balls of the corresponding class have been added
         assert updated[0, 0, 0] == 2  # Class 0
@@ -89,11 +89,74 @@ class TestPolyaUrnUpdate:
             [0, 1]
         ])
         delta = 1
-        updated = update_urns(urns.copy(), sampled_classes, delta)
+        updated = PolyaLabeler().update_urns(urns.copy(), sampled_classes, delta)
 
         # We added +1 ball to the chosen class
         expected = np.array([
             [[1, 1], [1, 1]],
             [[3, 2], [3, 4]]
         ])
+        np.testing.assert_array_equal(updated, expected)
+
+
+class TestGPPUrnUpdate:
+
+    def test_validate_reinforcement_matrix_is_square(self):
+        R = np.array([[2, 2, 0], [1, 1, 0]])
+        with pytest.raises(ValueError, match='Delta must be a square matrix'):
+            GPPLabeler().validate_reinforcement_matrix(R)
+
+    def test_validate_reinforcement_matrix_contains_only_integers(self):
+        R = np.array([[2.5, 2], [1, 1]])
+        with pytest.raises(ValueError, match='Delta must contain only integers'):
+            GPPLabeler().validate_reinforcement_matrix(R)
+
+    def test_validate_reinforcement_matrix_raises_error_if_rows_dont_sum_equal(self):
+        R = np.array([
+            [2, 0, 0],
+            [1, 1, 0],
+            [0, 0, 3]  # This one sums 3
+        ])
+        with pytest.raises(ValueError, match='All rows must sum to the same total'):
+            GPPLabeler().validate_reinforcement_matrix(R)
+
+    def test_update_urns_vectorial_delta_uniform(self):
+        urns = np.ones((2, 2, 3), dtype=int)
+        sampled_classes = np.array([
+            [0, 1],
+            [2, 0]
+        ])
+        R = np.ones((3, 3)) # We add 1 ball of each color regardless of the result
+        updated = GPPLabeler().update_urns(urns, sampled_classes, R)
+        expected = 2 * np.ones((2, 2, 3), dtype=int)
+        np.testing.assert_array_equal(updated, expected)
+
+    def test_update_urns_vectorial_delta_nonuniform(self):
+        urns = np.ones((2, 2, 3), dtype=int)
+        sampled_classes = np.array([
+            [0, 1],
+            [2, 0]
+        ])
+        R = np.array([[1, 2, 1], [0, 0, 4], [2, 2, 0]])
+        updated = GPPLabeler().update_urns(urns, sampled_classes, R)
+        expected = np.array([ [ [2, 3, 2] ],
+                              [ [1, 1, 5] ],
+                              [ [3, 3, 1] ],
+                              [ [2, 3, 2] ]
+                            ], dtype=int).reshape(2, 2, 3)
+        np.testing.assert_array_equal(updated, expected)
+
+    def test_update_urns_vectorial_polya_type(self):
+        urns = np.ones((2, 2, 3), dtype=int)
+        sampled_classes = np.array([
+            [0, 1],
+            [2, 0]
+        ])
+        R = np.eye(3) # Polya reinforcement matrix is the identity
+        updated = GPPLabeler().update_urns(urns, sampled_classes, R)
+        expected = np.array([ [ [2, 1, 1] ],
+                              [ [1, 2, 1] ],
+                              [ [1, 1, 2] ],
+                              [ [2, 1, 1] ]
+                            ], dtype=int).reshape(2, 2, 3)
         np.testing.assert_array_equal(updated, expected)

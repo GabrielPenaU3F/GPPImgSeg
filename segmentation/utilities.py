@@ -128,8 +128,7 @@ def sample_class_from_probs(probs):
     samples = (cdf > r).argmax(axis=2)
     return samples
 
-def save_frame(probs, n_frame, save_directory):
-    img = label_image_from_probabilities(probs)
-    frame = Image.fromarray(img)
+def save_frame(X, n_frame, save_directory):
+    frame = Image.fromarray(X)
     file = os.path.join(save_directory, f'frame_{n_frame:03d}.png')
     frame.save(file)

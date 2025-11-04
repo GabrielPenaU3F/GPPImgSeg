@@ -1,9 +1,7 @@
 import numpy as np
 import pytest
 
-from segmentation.methods.ml_labeling import estimate_gaussian_distributions, compute_inverses_and_determinants, \
-    log_likelihood
-
+from segmentation.methods.ml_labeler import MLLabeler
 
 def generate_unidimensional_testcase():
     X = np.array([0.0, 5.0, 5.0, 15.0])
@@ -28,14 +26,14 @@ def generate_multidimensional_testcase():
 @pytest.fixture
 def simple_testcase_mean_var():
     X, labels, n_classes = generate_unidimensional_testcase()
-    means, covs = estimate_gaussian_distributions(X, labels, n_classes)
+    means, covs = MLLabeler().estimate_gaussian_distributions(X, labels, n_classes)
     return means, covs
 
 @pytest.fixture
 def simple_testcase_inverses_logdets():
     X, labels, n_classes = generate_unidimensional_testcase()
-    _, vars = estimate_gaussian_distributions(X, labels, n_classes)
-    inv_vars, logdets = compute_inverses_and_determinants(vars)
+    _, vars = MLLabeler().estimate_gaussian_distributions(X, labels, n_classes)
+    inv_vars, logdets = MLLabeler().compute_inverses_and_determinants(vars)
     return inv_vars, logdets
 
 @pytest.fixture
@@ -46,14 +44,14 @@ def two_channel_matrix():
 @pytest.fixture
 def two_channel_testcase_means_covs():
     X, labels, n_classes = generate_multidimensional_testcase()
-    means, covs = estimate_gaussian_distributions(X, labels, n_classes)
+    means, covs = MLLabeler().estimate_gaussian_distributions(X, labels, n_classes)
     return means, covs
 
 @pytest.fixture
 def two_channel_testcase_inverses_logdets():
     X, labels, n_classes = generate_multidimensional_testcase()
-    _, covs = estimate_gaussian_distributions(X, labels, n_classes)
-    inv_covs, logdets = compute_inverses_and_determinants(covs)
+    _, covs = MLLabeler().estimate_gaussian_distributions(X, labels, n_classes)
+    inv_covs, logdets = MLLabeler().compute_inverses_and_determinants(covs)
     return inv_covs, logdets
 
 
@@ -123,6 +121,6 @@ class TestComputeInversesAndDeterminants:
         X, labels = two_channel_matrix
         means, _ = two_channel_testcase_means_covs
         inv_covs, logdets = two_channel_testcase_inverses_logdets
-        log_probs = log_likelihood(X, 2, means, inv_covs, logdets)
+        log_probs = MLLabeler().log_likelihood(X, 2, means, inv_covs, logdets)
         assigned = np.argmax(log_probs, axis=1)
         np.testing.assert_array_equal(assigned, labels)
