@@ -39,7 +39,7 @@ reinforcement_matrix_sub = np.ones((6, 6))
 gpp_subdif_img = Image.fromarray(GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
                                                     R=reinforcement_matrix_sub, n_iter=20, return_type='img'))
 
-reinforcement_matrix_hyper = -np.ones((6, 6)) + 9 * np.eye(6)
+reinforcement_matrix_hyper = -np.ones((6, 6)) + 10 * np.eye(6)
 gpp_hyper_img = Image.fromarray(GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
                                                     R=reinforcement_matrix_hyper, n_iter=20, return_type='img'))
 
