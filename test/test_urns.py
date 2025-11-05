@@ -13,6 +13,15 @@ def multipixel_probs():
     ])  # Shape (1, 2, 2)
     return probs
 
+@pytest.fixture
+def test_urn_array_1():
+    urns = np.array([
+        [[2, 1],
+         [0, 3]]
+    ], dtype=int)  # (1,2,2)
+    sampled_classes = np.array([[0, 1]])
+    return urns, sampled_classes
+
 class TestUrnInicialization:
 
     def test_initialize_urns_total_balls_preserved(self):
@@ -159,4 +168,20 @@ class TestGPPUrnUpdate:
                               [ [1, 1, 2] ],
                               [ [2, 1, 1] ]
                             ], dtype=int).reshape(2, 2, 3)
+        np.testing.assert_array_equal(updated, expected)
+
+    def test_update_urns_negative_reinforcement_yields_no_negatives(self, test_urn_array_1):
+        urns, sampled_classes = test_urn_array_1
+        R = np.array([[2, -6], [2, -6]])  # remove 6 of the other color
+        updated = GPPLabeler().update_urns(urns, sampled_classes, R)
+        assert np.all(updated >= 0)
+
+
+    def test_update_urns_negative_reinforcement_works_correctly(self, test_urn_array_1):
+        urns, sampled_classes = test_urn_array_1
+        R = np.array([[2, -1], [2, -1]])  # remove 1 of the other color
+        updated = GPPLabeler().update_urns(urns, sampled_classes, R)
+        # [2,1] and class=0 → +2,-1 → [4,0]
+        # [0,3] and class=1 → +2,-1 → [2,2]
+        expected = np.array([[[4, 0], [2, 2]]])
         np.testing.assert_array_equal(updated, expected)

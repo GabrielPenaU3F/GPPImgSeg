@@ -90,6 +90,8 @@ class GPPLabeler(UrnLabeler):
         # For each pixel i, add R[class_i] to urns_flat[i]
         balls_to_add = R[classes_flat]
         urns_flat += balls_to_add
+        # --- Prevent negative counts, this could happen with negative reinforcement ---
+        urns_flat = np.maximum(urns_flat, 0)
 
         return urns_flat.reshape(h, w, k)
 
