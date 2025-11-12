@@ -1,6 +1,6 @@
 import numpy as np
 
-from segmentation.utilities import format_image, save_frame
+from segmentation.utilities import format_labeled_image, save_frame
 
 
 class NMCLabeler:
@@ -30,10 +30,10 @@ class NMCLabeler:
                 if save_directory is None:
                     raise Exception('Save directory not specified')
                 img = labels.reshape(X.shape[:2])
-                img = format_image(img, n_classes)
+                img = format_labeled_image(img, n_classes)
                 save_frame(img, n + 1, save_directory)
 
         segmented_img = labels.reshape(X.shape[:2]) # We rebuild a single channel
         if return_type == 'img':
-            segmented_img = format_image(segmented_img, n_classes)
+            segmented_img = format_labeled_image(segmented_img, n_classes)
         return segmented_img

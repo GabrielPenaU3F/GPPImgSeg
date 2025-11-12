@@ -1,7 +1,11 @@
+from typing import Union
+
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans
+
+from segmentation.utilities import format_regular_image
 
 """
     Genera una imagen sintética con regiones texturadas y un mapa de etiquetas.
@@ -28,7 +32,14 @@ from sklearn.cluster import KMeans
         Mapa de etiquetas (h, w) con valores en [0, n_regions-1].
     """
 
-def generate_textured_image(size=(256, 256), n_regions=3, smoothness=1.0, intensity=1.0, seed=None):
+def generate_textured_image( # Typing
+        size: tuple[int, int] = (256, 256),
+        n_regions: int = 3,
+        smoothness: Union[float, np.ndarray] = 1.0,
+        intensity: Union[float, np.ndarray] = 1.0,
+        seed: int | None = None
+):
+
     rng = np.random.default_rng(seed)
     h, w = size
     masks = generate_connected_masks(size, n_regions, seed=seed)
@@ -50,11 +61,12 @@ def generate_textured_image(size=(256, 256), n_regions=3, smoothness=1.0, intens
         region_texture = generate_textured_region(size, smoothness[k], intensity[k], None if seed is None else seed + k)
         image[masks == k] = region_texture[masks == k] + 0.3 * k  # diferenciar tonos base
 
-    image = (image - image.min()) / (image.max() - image.min() + 1e-8)
+    image = format_regular_image(image)
     return image, masks
 
 def generate_textured_region(size=(256, 256), smoothness=1.0, intensity=0.5, seed=None):
-    noise = np.random.rand(*size)
+    rng = np.random.default_rng(seed)
+    noise = rng.random(size)
     texture = gaussian_filter(noise, sigma=smoothness)
     texture = (texture - texture.min()) / (texture.max() - texture.min())
     texture = texture * intensity
@@ -74,6 +86,7 @@ def generate_connected_masks(size=(256, 256), n_regions=3, seed=None):
 
 if __name__ == '__main__':
 
-    img, _ = generate_textured_image(size=(256, 256), n_regions=3, smoothness=[0.5, 0.1, 0.8], intensity=1.5)
+    img, _ = generate_textured_image(size=(256, 256), n_regions=3, smoothness=[0.5, 0.1, 0.8], intensity=[1.0, 1.2, 0.7],
+                                     seed=42)
     plt.imshow(img, cmap='gray')
     plt.show()

@@ -1,7 +1,9 @@
 import numpy as np
 
-from synthesizers.image_generators import generate_regions_voronoi
 from matplotlib import pyplot as plt
+
+from synthesizers.voronoi_regions_generator import generate_regions_voronoi
+
 
 def add_salt_pepper_noise(img, salt_prob=0.01, pepper_prob=0.01, seed=None):
 
@@ -9,6 +11,9 @@ def add_salt_pepper_noise(img, salt_prob=0.01, pepper_prob=0.01, seed=None):
         np.random.seed(seed)
 
     noisy = img.copy()
+
+    # Image dynamic range - we make this robust to the range
+    min_val, max_val = noisy.min(), noisy.max()
 
     # Uniform-random matrix
     rand = np.random.rand(*img.shape[:2])
@@ -19,11 +24,11 @@ def add_salt_pepper_noise(img, salt_prob=0.01, pepper_prob=0.01, seed=None):
     pepper_mask = (rand >= salt_prob) & (rand < salt_prob + pepper_prob)
 
     if img.ndim == 2:
-        noisy[salt_mask] = 255
-        noisy[pepper_mask] = 0
+        noisy[salt_mask] = max_val
+        noisy[pepper_mask] = min_val
     else:
-        noisy[salt_mask, :] = 255
-        noisy[pepper_mask, :] = 0
+        noisy[salt_mask, :] = max_val
+        noisy[pepper_mask, :] = min_val
 
     return noisy
 
