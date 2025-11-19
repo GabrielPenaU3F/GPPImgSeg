@@ -12,17 +12,17 @@ from synthesizers.textured_image_generator import generate_textured_image
 k = 3 # Number of regions
 seed = 42
 img, ground_truth = generate_textured_image(size=(256, 256), n_regions=k, seed=seed,
-                                 smoothness=[0.4, 0.4, 0.4], intensity=[1.0, 0.8, 1.2])
+                                 smoothness=[0.4, 0.4, 0.4], intensity=[0, 0, 0.3])
 
 # --- Reference
 
 fig1, ax = plt.subplots(1, 2, figsize=(12, 8))
 
-ax[0].imshow(img, cmap='gray')
+ax[0].imshow(img, cmap='gray', vmin=0, vmax=255)
 ax[0].axis('off')
 ax[0].set_title('Original Image')
 
-ax[1].imshow(ground_truth, cmap='gray')
+ax[1].imshow(ground_truth, cmap='gray', vmin=0, vmax=255)
 ax[1].axis('off')
 ax[1].set_title('Ground Truth')
 

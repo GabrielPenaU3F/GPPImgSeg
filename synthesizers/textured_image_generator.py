@@ -65,17 +65,19 @@ def generate_textured_image( # Typing
 
     for k in range(n_regions):
         region = (mask == k)
-        texture = generate_textured_region(size, smoothness[k], seed)
         intensity_k = intensity[k] * base_intensities[k]
-        image += texture * region * intensity_k
+        texture = generate_textured_region(size, smoothness[k], intensity_k, seed)
+        image += texture * region
 
     return image, ground_truth
 
-def generate_textured_region(size=(256, 256), smoothness=1.0, seed=None):
+def generate_textured_region(size=(256, 256), smoothness=1.0, intensity=1.0, seed=None):
     rng = np.random.default_rng(seed)
     noise = rng.random(size)
     texture = gaussian_filter(noise, sigma=smoothness)
-    texture = (texture - texture.min()) / (texture.max() - texture.min() + 1e-7)
+    texture = texture - texture.mean()
+    texture = texture / np.max(np.abs(texture))
+    texture = texture * intensity
     return texture
 
 def generate_connected_masks(size=(256, 256), n_regions=3, seed=None):
