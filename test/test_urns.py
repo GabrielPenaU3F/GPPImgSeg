@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from segmentation.methods.urn_labelers import GPPLabeler, PolyaLabeler
-from segmentation.utilities import initialize_urns
+from utilities.segmentation_utilities import initialize_urns
 
 
 @pytest.fixture

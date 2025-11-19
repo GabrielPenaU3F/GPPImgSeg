@@ -1,6 +1,7 @@
 import numpy as np
 
-from segmentation.utilities import label_image_from_probabilities
+from utilities.image_format_utilities import label_image_from_probabilities
+
 
 class MLLabeler:
 

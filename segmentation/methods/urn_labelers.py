@@ -3,8 +3,9 @@ from abc import ABC
 from matplotlib import pyplot as plt
 import numpy as np
 
-from segmentation.utilities import get_neighbor_stack, label_image_from_probabilities, initialize_urns, \
-    sample_class_from_probs, save_frame
+from utilities.image_format_utilities import label_image_from_probabilities
+from utilities.output_utilities import save_frame
+from utilities.segmentation_utilities import initialize_urns, get_neighbor_stack, sample_class_from_probs
 
 
 class UrnLabeler(ABC):

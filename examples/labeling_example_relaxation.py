@@ -7,9 +7,9 @@ from segmentation.methods.ml_labeler import MLLabeler
 from segmentation.methods.nmc_labeler import NMCLabeler
 from segmentation.methods.rl_labeler import RelaxationLabeler
 from segmentation.neighborhood import Neighborhood
-from segmentation.utilities import format_labeled_image, label_image_from_probabilities
+from utilities import format_labeled_image, label_image_from_probabilities
 
-image_path = 'resources/test_img.bmp'
+image_path = '../resources/test_img.bmp'
 img = Image.open(image_path).convert('L')
 X = np.array(img)
 n_classes = 3

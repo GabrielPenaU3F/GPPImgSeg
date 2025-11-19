@@ -54,3 +54,7 @@ class TestTexturedImageGeneration:
         tex = 2 * (img_1 - ground_truth)
         tex_actual = img_2 - ground_truth
         np.testing.assert_allclose(tex_actual, tex, rtol=1e-3)
+
+    def test_ground_truth_and_image_coincide_when_intensity_is_zero(self):
+        img, ground_truth = generate_textured_image(size=(32, 32), n_regions=2, smoothness=0.2, intensity=0)
+        np.testing.assert_array_equal(img, ground_truth)

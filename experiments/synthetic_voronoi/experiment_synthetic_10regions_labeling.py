@@ -1,5 +1,3 @@
-from PIL import Image
-
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -8,7 +6,7 @@ from segmentation.methods.nmc_labeler import NMCLabeler
 from segmentation.methods.rl_labeler import RelaxationLabeler
 from segmentation.methods.urn_labelers import PolyaLabeler, GPPLabeler
 from segmentation.neighborhood import Neighborhood
-from segmentation.utilities import format_labeled_image, label_image_from_probabilities
+from utilities import format_labeled_image, label_image_from_probabilities
 from synthesizers.noise_generators import add_salt_pepper_noise
 from synthesizers.voronoi_regions_generator import generate_regions_voronoi
 

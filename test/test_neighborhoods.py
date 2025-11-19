@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from segmentation.neighborhood import Neighborhood
-from segmentation.utilities import make_shifts_from_mode, get_neighbor_stack
+from utilities.segmentation_utilities import make_shifts_from_mode, get_neighbor_stack
+
 
 @pytest.fixture
 def simple_image():

@@ -5,8 +5,6 @@ from scipy.ndimage import gaussian_filter
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans
 
-from segmentation.utilities import format_regular_image, format_labeled_image, align_labels
-
 """
     Genera una imagen sintética con regiones texturadas y un mapa de etiquetas.
     Cada región puede tener diferente intensidad y suavidad de textura.

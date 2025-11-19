@@ -1,6 +1,8 @@
 import numpy as np
 
-from segmentation.utilities import label_image_from_probabilities, get_neighbor_stack
+from utilities.image_format_utilities import label_image_from_probabilities
+from utilities.segmentation_utilities import get_neighbor_stack
+
 
 class RelaxationLabeler:
 
@@ -61,13 +63,3 @@ class RelaxationLabeler:
     def validate_compatibility_matrix(self, compatibility_matrix, n_classes):
         if compatibility_matrix.shape == (n_classes, n_classes): return True
         else: raise ValueError('The provided compatibility matrix is not adequate for this number of classes')
-
-# image_path = '../../resources/test_img.bmp'
-# img = Image.open(image_path)
-# X = np.array(img)
-# init_labels = nmc(X, n_iter=10, n_classes=3, return_type='raw')
-# init_probabilities = ml_labeling(X, init_labels, return_type='probs')
-# neighborhood = Neighborhood('8')
-# Y = relaxation_labeling(init_probabilities, neighborhood, n_iter=10, return_type='img')
-# Y = Image.fromarray(Y)
-# Y.show()

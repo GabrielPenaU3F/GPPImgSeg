@@ -1,6 +1,7 @@
 import numpy as np
 
-from segmentation.utilities import format_labeled_image, save_frame
+from utilities.image_format_utilities import format_labeled_image
+from utilities.output_utilities import save_frame
 
 
 class NMCLabeler:
