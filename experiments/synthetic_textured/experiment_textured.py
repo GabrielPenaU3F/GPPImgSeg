@@ -8,8 +8,8 @@ from segmentation.methods.urn_labelers import PolyaLabeler, GPPLabeler
 from segmentation.metrics import SegmentationComparator
 from segmentation.neighborhood import Neighborhood
 from synthesizers.textured_image_generator import generate_textured_image
-from utilities.image_format_utilities import label_image_from_probabilities, align_labels
-from utilities.output_utilities import plot_confusion_matrix
+from utilities.image_format_utilities import label_image_from_probabilities, align_labels, normalize_labels
+from utilities.output_utilities import plot_confusion_matrix, plot_regional_mse_bars
 
 k = 3 # Number of regions
 seed = 42
@@ -113,9 +113,11 @@ comparator = SegmentationComparator()
 
 adjusted_rands = []
 bf1_scores = []
+regional_mses = []
 for pred in predictions:
     adjusted_rands.append(comparator.adjusted_rand(ground_truth, pred))
     bf1_scores.append(comparator.boundary_f1(ground_truth, pred, tol=2))
+    regional_mses.append(comparator.regional_mse(ground_truth, pred, return_type='region'))
 
 adjusted_rand = np.array(adjusted_rands)
 bf1_scores = np.array(bf1_scores)
@@ -140,6 +142,10 @@ plt.grid(axis='y', linestyle='--', alpha=0.3)
 plt.tight_layout()
 plt.show()
 
+plot_regional_mse_bars(regional_mses, experiment_names)
+
 for pred, name in zip(predictions, experiment_names):
-    cm, labels = comparator.compute_confusion_matrix(ground_truth, pred)
+    pred_norm = normalize_labels(pred)
+    gt_norm = normalize_labels(ground_truth)
+    cm, labels = comparator.compute_confusion_matrix(gt_norm, pred_norm)
     plot_confusion_matrix(cm, labels, title=f"Confusion - {name}")
