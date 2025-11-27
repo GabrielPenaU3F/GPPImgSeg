@@ -59,7 +59,7 @@ def plot_regional_mse_bars(mse_regions_list, method_names):
                label=labels[k],
                color=colors[k])
 
-    # Línea horizontal del promedio de cada método
+    # Línea horizontal del promedio de cada
     for i in range(n_methods):
         regional_mean = mse_regions_list[i].mean()
         ax.hlines(regional_mean,
