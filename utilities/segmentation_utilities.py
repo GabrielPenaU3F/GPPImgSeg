@@ -107,9 +107,9 @@ def initialize_urns(probs, n_balls=100):
 
     return urns.reshape(h, w, K)
 
-def sample_class_from_probs(probs):
+def sample_class_from_probs(probs, seed=None):
     h, w, k = probs.shape
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
     cdf = np.cumsum(probs, axis=2)  # (h, w, k)
     r = rng.random((h, w, 1))  # (h, w, 1)
     samples = (cdf > r).argmax(axis=2)

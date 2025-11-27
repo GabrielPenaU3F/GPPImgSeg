@@ -10,13 +10,18 @@ from utilities.segmentation_utilities import initialize_urns, get_neighbor_stack
 
 class UrnLabeler(ABC):
 
-    def label(self, probs, neighborhood, initial_total_balls, R, n_iter=10,
-              return_type='img', watch_evolution=False, save_directory=None):
+    def label(self, input, neighborhood, initial_total_balls, R, n_iter=10,
+              input_type='probs', return_type='img', watch_evolution=False, save_directory=None, seed=None,
+              verbose=True):
 
-        urns = initialize_urns(probs, initial_total_balls)
+        if input_type == 'probs':
+            urns = initialize_urns(input, initial_total_balls)
+        elif input_type == 'urns':
+            urns = input
 
         for n in range(n_iter):
-            print(f'Iteration Nº{n+1}')
+            if verbose is True:
+                print(f'Iteration Nº{n+1}')
 
             '''
                 Flow of the algorithm is the same as the relaxation labeling implementation
@@ -24,7 +29,7 @@ class UrnLabeler(ABC):
             neighbor_urn_stack = get_neighbor_stack(urns, neighborhood)
             super_urns = neighbor_urn_stack.sum(axis=2)  # (h, w, k)
             super_urn_probs = super_urns / super_urns.sum(axis=2, keepdims=True)
-            sampled_classes = sample_class_from_probs(super_urn_probs)
+            sampled_classes = sample_class_from_probs(super_urn_probs, seed=seed)
             urns = self.update_urns(urns, sampled_classes, R)
 
             if watch_evolution:

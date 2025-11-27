@@ -7,14 +7,15 @@ from segmentation.methods.rl_labeler import RelaxationLabeler
 from segmentation.methods.urn_labelers import PolyaLabeler, GPPLabeler
 from segmentation.metrics import SegmentationComparator
 from segmentation.neighborhood import Neighborhood
-from synthesizers.textured_image_generator import generate_textured_image
+from synthesizers.connected_image_generator import ConnectedRegionsImageGenerator
 from utilities.image_format_utilities import label_image_from_probabilities, align_labels, normalize_labels
 from utilities.output_utilities import plot_confusion_matrix, plot_regional_mse_bars
 
 k = 3 # Number of regions
 seed = 42
-img, ground_truth = generate_textured_image(size=(256, 256), n_regions=k, seed=seed,
-                                 smoothness=[0.4, 0.4, 0.4], intensity=[0.7, 0.8, 0.3])
+generator = ConnectedRegionsImageGenerator()
+img, ground_truth = generator.generate_textured_image(size=(256, 256), n_regions=k, seed=seed,
+                                                      smoothness=[0.4, 0.4, 0.4], intensity=[0.7, 0.8, 0.3])
 
 # --- Reference ---
 

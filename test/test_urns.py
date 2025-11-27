@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from segmentation.methods.urn_labelers import GPPLabeler, PolyaLabeler
+from segmentation.neighborhood import Neighborhood
 from utilities.segmentation_utilities import initialize_urns
 
 
@@ -185,3 +186,105 @@ class TestGPPUrnUpdate:
         # [0,3] and class=1 → +2,-1 → [2,2]
         expected = np.array([[[4, 0], [2, 2]]])
         np.testing.assert_array_equal(updated, expected)
+
+    def test_urns_iterative_equivalence(self):
+        h, w, k = 20, 20, 3
+        probs0 = np.random.rand(h, w, k)
+        probs0 /= probs0.sum(axis=2, keepdims=True)
+
+        neighborhood = Neighborhood('8')
+        initial_total_balls = 50
+        R = np.eye(k)
+        labeler = GPPLabeler()
+
+        # A) 50 iterations in one run
+        urns_50 = labeler.label(
+            input=probs0.copy(),
+            input_type='probs',
+            neighborhood=neighborhood,
+            initial_total_balls=initial_total_balls,
+            R=R,
+            n_iter=50,
+            return_type='urns',
+            seed=42,
+            verbose=False
+        )
+
+        # B) 20 iterations, then 30, preserving urns
+        urns_20 = labeler.label(
+            input=probs0.copy(),
+            input_type='probs',
+            neighborhood=neighborhood,
+            initial_total_balls=initial_total_balls,
+            R=R,
+            n_iter=20,
+            return_type='urns',
+            seed=42,
+            verbose=False
+        )
+
+        urns_20_30 = labeler.label(
+            input=urns_20,  # << URNS, not probs
+            input_type='urns',
+            neighborhood=neighborhood,
+            initial_total_balls=None,
+            R=R,
+            n_iter=30,
+            return_type='urns',
+            seed=42,
+            verbose=False
+        )
+
+        np.testing.assert_allclose(urns_50, urns_20_30, rtol=1e-12)
+
+    def test_urns_reinitializing_from_probs_fails(self):
+        h, w, k = 20, 20, 3
+        probs0 = np.random.rand(h, w, k)
+        probs0 /= probs0.sum(axis=2, keepdims=True)
+
+        neighborhood = Neighborhood('8')
+        initial_total_balls = 50
+        R = np.eye(k)
+        labeler = GPPLabeler()
+
+        urns_50 = labeler.label(
+            input=probs0.copy(),
+            input_type='probs',
+            neighborhood=neighborhood,
+            initial_total_balls=initial_total_balls,
+            R=R,
+            n_iter=50,
+            return_type='urns',
+            seed=42,
+            verbose=False
+        )
+
+        # 20 iterations → probs
+        probs_20 = labeler.label(
+            input=probs0.copy(),
+            input_type='probs',
+            neighborhood=neighborhood,
+            initial_total_balls=initial_total_balls,
+            R=R,
+            n_iter=20,
+            return_type='probs',
+            seed=42,
+            verbose=False
+        )
+
+        # Reinitialize from probs should produce a different state
+        urns_reinit = labeler.label(
+            input=probs_20,
+            input_type='probs',  # << reinicio incorrecto
+            neighborhood=neighborhood,
+            initial_total_balls=initial_total_balls,
+            R=R,
+            n_iter=30,
+            return_type='urns',
+            seed=42,
+            verbose=False
+        )
+
+        # They should be significantly different
+        diff = np.abs(urns_50 - urns_reinit).mean()
+        assert diff > 1.0, "Reinitializing urns from probs should break equivalence"
