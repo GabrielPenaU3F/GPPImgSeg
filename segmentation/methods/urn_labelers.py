@@ -18,6 +18,10 @@ class UrnLabeler(ABC):
             urns = initialize_urns(input, initial_total_balls)
         elif input_type == 'urns':
             urns = input
+        else:
+            raise ValueError("input_type must be 'probs' or 'urns'")
+
+        self.validate_R(R, urns)
 
         for n in range(n_iter):
             if verbose is True:
@@ -30,7 +34,12 @@ class UrnLabeler(ABC):
             super_urns = neighbor_urn_stack.sum(axis=2)  # (h, w, k)
             super_urn_probs = super_urns / super_urns.sum(axis=2, keepdims=True)
             sampled_classes = sample_class_from_probs(super_urn_probs, seed=seed)
-            urns = self.update_urns(urns, sampled_classes, R)
+
+            if callable(R):
+                R_val = R(n, super_urn_probs)
+            else:
+                R_val = R
+            urns = self.update_urns(urns, sampled_classes, R_val)
 
             if watch_evolution:
                 if save_directory is None:
@@ -49,8 +58,35 @@ class UrnLabeler(ABC):
         elif return_type == 'urns':
             return urns
 
+        else:
+            raise ValueError("return_type must be 'img', 'probs', or 'urns'")
+
     def update_urns(self, urns, sampled_classes, delta):
         pass
+
+    def validate_R(self, R_arg, urns):
+
+        k = urns.shape[-1]
+
+        # Case 1: R is a function
+        if callable(R_arg):
+            R = R_arg(-1, urns)
+            R = np.array(R)
+
+        # Case 2: R is a square matrix
+        elif isinstance(R_arg, (list, tuple, np.ndarray)):
+            R = np.array(R_arg)
+
+        else:
+            raise TypeError('R must be a function or a matrix-like')
+
+        # Validate shape and type
+        if not R.shape == (k, k):
+            raise ValueError('Reinforcement matrix shape is not correct')
+
+        if not np.array_equal(R, R.astype(int)):
+            raise ValueError('Reinforcement matrix must only contain integers')
+
 
 
 class PolyaLabeler(UrnLabeler):

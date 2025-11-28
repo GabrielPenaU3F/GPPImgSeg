@@ -4,12 +4,10 @@ from matplotlib import pyplot as plt
 from segmentation.methods.ml_labeler import MLLabeler
 from segmentation.methods.nmc_labeler import NMCLabeler
 from segmentation.methods.rl_labeler import RelaxationLabeler
-from segmentation.methods.urn_labelers import PolyaLabeler, GPPLabeler
-from segmentation.metrics import SegmentationComparator
+from segmentation.methods.urn_labelers import GPPLabeler
 from segmentation.neighborhood import Neighborhood
 from synthesizers.disconnected_image_generator import DisconnectedRegionsImageGenerator
-from utilities.image_format_utilities import label_image_from_probabilities, align_labels, normalize_labels
-from utilities.output_utilities import plot_confusion_matrix, plot_regional_mse_bars
+from utilities.image_format_utilities import label_image_from_probabilities, align_labels
 
 k = 3 # Number of regions
 seed = 42
@@ -21,8 +19,6 @@ img, ground_truth = generator.generate_textured_image(size=(256, 256), n_regions
 
 nmc_labels = NMCLabeler(seed).label(img, n_iter=10, n_classes=k, return_type='raw')
 nmc_img = align_labels(nmc_labels, ground_truth)
-
-fig1, ax = plt.subplots(1, 3, figsize=(12, 8))
 
 ml_probs = MLLabeler().label(img, nmc_labels, return_type='probs')
 ml_labels = label_image_from_probabilities(ml_probs)

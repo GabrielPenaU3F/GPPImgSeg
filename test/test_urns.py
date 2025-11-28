@@ -23,6 +23,15 @@ def test_urn_array_1():
     sampled_classes = np.array([[0, 1]])
     return urns, sampled_classes
 
+@pytest.fixture
+def simple_2x2_tracking():
+    probs = np.array([
+        [[0.8, 0.2], [0.7, 0.3]],
+        [[0.3, 0.7], [0.1, 0.9]]
+    ], dtype=float)
+    probs /= probs.sum(axis=2, keepdims=True)
+    return probs
+
 class TestUrnInicialization:
 
     def test_initialize_urns_total_balls_preserved(self):
@@ -69,6 +78,63 @@ class TestUrnInicialization:
         assert urns.sum() == n_balls
         assert urns.max() - urns.min() <= 1
 
+
+class TestUrnArguments:
+
+    def test_input_type_is_not_correct(self):
+        labeler = GPPLabeler()
+        with pytest.raises(ValueError, match="input_type must be 'probs' or 'urns'"):
+            labeler.label(np.zeros((2, 2, 2)),
+                          Neighborhood('4'),
+                          initial_total_balls=10,
+                          R=np.eye(2, 2),
+                          input_type=1)
+
+    def test_output_type_is_not_correct(self):
+        labeler = GPPLabeler()
+        with pytest.raises(ValueError, match="return_type must be 'img', 'probs', or 'urns'"):
+            labeler.label(np.zeros((2, 2, 2)),
+                          Neighborhood('4'),
+                          initial_total_balls=10,
+                          R=np.eye(2, 2),
+                          return_type=1)
+
+    def test_R_function_must_return_matrix(self):
+        h, w, k = 10, 10, 3
+        probs = np.ones((h, w, k)) / k
+        labeler = GPPLabeler()
+
+        def bad_R(n, urns):
+            return 123  # invalid
+
+        with pytest.raises(ValueError, match='Reinforcement matrix shape is not correct'):
+            labeler.label(
+                probs,
+                neighborhood=1,
+                initial_total_balls=5,
+                R=bad_R,
+                n_iter=5,
+                input_type='probs',
+                return_type='probs'
+            )
+
+    def test_R_must_only_contain_integers(self):
+        h, w, k = 10, 10, 3
+        probs = np.ones((h, w, k)) / k
+        labeler = GPPLabeler()
+
+        bad_R = 0.5 * np.eye(3)
+
+        with pytest.raises(ValueError, match='Reinforcement matrix must only contain integers'):
+            labeler.label(
+                probs,
+                neighborhood=1,
+                initial_total_balls=5,
+                R=bad_R,
+                n_iter=5,
+                input_type='probs',
+                return_type='probs'
+            )
 
 class TestPolyaUrnUpdate:
 
@@ -288,3 +354,83 @@ class TestGPPUrnUpdate:
         # They should be significantly different
         diff = np.abs(urns_50 - urns_reinit).mean()
         assert diff > 1.0, "Reinitializing urns from probs should break equivalence"
+
+
+class TestReinforcementScheme:
+
+    def test_fixed_R(self, simple_2x2_tracking):
+        labeler = GPPLabeler()
+        R = np.eye(2)
+        seed = 1
+
+        urns = labeler.label(
+            simple_2x2_tracking,
+            neighborhood=Neighborhood('4'),
+            initial_total_balls=10,
+            R=R,
+            n_iter=5,
+            input_type='probs',
+            return_type='urns',
+            seed=seed,
+        )
+
+        # Exact expected urn
+        expected_urns = np.array([
+            [[8, 7], [7, 8]],
+            [[8, 7], [1, 14]]
+        ])
+
+        assert np.array_equal(urns, expected_urns)
+
+    def test_R_as_function_called_each_iteration(self, simple_2x2_tracking):
+
+        # When R is a function, it should be called once per iteration
+        labeler = GPPLabeler()
+        n_iter = 15
+        calls = []
+
+        def R_func(n, urns):
+            calls.append(n)
+            k = urns.shape[2]
+            return np.eye(k)
+
+        labeler.label(
+            simple_2x2_tracking,
+            neighborhood=Neighborhood('4'),
+            initial_total_balls=5,
+            R=R_func,
+            n_iter=n_iter,
+            input_type='probs',
+            return_type='probs'
+        )
+
+        # plus a -1 for the validation procedure
+        assert calls == [-1] + list(range(n_iter))
+
+    def test_schedule_changes_results(self):
+
+        seed = 1
+        rng = np.random.default_rng(seed)
+        h, w, k = 15, 15, 2
+        probs = rng.random((h, w, k))
+        probs /= probs.sum(axis=2, keepdims=True)
+        labeler = GPPLabeler()
+
+        def R_polya_then_soft(n, urns):
+            if n < 10:
+                return np.eye(2)  # aggresive
+            else:
+                return np.array([[2, 1], [1, 2]])  # soft
+
+        out_fixed = labeler.label(
+            probs, Neighborhood('4'), 10, np.eye(2), 20,
+            input_type='probs', return_type='probs'
+        )
+
+        out_sched = labeler.label(
+            probs, Neighborhood('4'), 10, R_polya_then_soft, 20,
+            input_type='probs', return_type='probs'
+        )
+
+        # Should not be equal
+        assert not np.allclose(out_fixed, out_sched)
