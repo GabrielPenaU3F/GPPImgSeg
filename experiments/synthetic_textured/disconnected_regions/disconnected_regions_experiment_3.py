@@ -26,7 +26,7 @@ ml_img = align_labels(ml_labels, ground_truth)
 
 # --- Relaxation ---
 
-neighborhood = Neighborhood('radius', radius=2)
+neighborhood = Neighborhood('radius', radius=3)
 
 # 200 iterations
 
@@ -35,27 +35,20 @@ rl_labels = label_image_from_probabilities(rl_probs)
 rl_img = align_labels(rl_labels, ground_truth)
 
 # Negative reinforcement on the minoritarian neighbors works wonders
-R_init = -200 * np.ones((3, 3)) + 200 * np.eye(3)
-R_final = 100 * np.eye(3)
-def adaptive_R(n):
-    if n < 20:
-        return R_init
-    elif 20 <= n < 50:
-        t = (n - 20) / 30
-        R = R_init + t * (R_final - R_init)
-        return np.round(R).astype(int)
-    elif n >= 50:
-        return R_final
+R_1 = -200 * np.ones((3, 3)) + 200 * np.eye(3)
+R_2 = -200 * np.ones((3, 3)) + 400 * np.eye(3)
 
-hyper_labels = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=500,
-                                  R=R_init, n_iter=100, return_type='img',
-                                  input_type='probs', seed=42)
-hyper_img = align_labels(hyper_labels, ground_truth)
+labeler_1 = GPPLabeler(seed=42)
+labeler_2 = GPPLabeler(seed=42)
 
-adaptive_labels = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=500,
-                                     R=lambda n: adaptive_R(n), n_iter=100, return_type='img', input_type='probs',
-                                     seed=42)
-adaptive_img = align_labels(adaptive_labels, ground_truth)
+hyper_labels_1 = labeler_1.label(ml_probs, neighborhood, initial_total_balls=500,
+                                    R=R_1, n_iter=50, return_type='img',input_type='probs')
+hyper_img_1 = align_labels(hyper_labels_1, ground_truth)
+
+hyper_labels_2 = labeler_2.label(ml_probs, neighborhood, initial_total_balls=500,
+                                    R=R_2, n_iter=50, return_type='img', input_type='probs')
+hyper_img_2 = align_labels(hyper_labels_2, ground_truth)
+
 
 fig, ax = plt.subplots(2, 2, figsize=(12, 8))
 
@@ -67,13 +60,13 @@ ax[0, 1].imshow(rl_img, cmap='gray', vmin=0, vmax=255)
 ax[0, 1].axis('off')
 ax[0, 1].set_title('RL (n=50)')
 
-ax[1, 0].imshow(hyper_img, cmap='gray', vmin=0, vmax=255)
+ax[1, 0].imshow(hyper_img_1, cmap='gray', vmin=0, vmax=255)
 ax[1, 0].axis('off')
-ax[1, 0].set_title('Hyper (n=100)')
+ax[1, 0].set_title('Hyper - purely negative (n=50)')
 
-ax[1, 1].imshow(adaptive_img, cmap='gray', vmin=0, vmax=255)
+ax[1, 1].imshow(hyper_img_2, cmap='gray', vmin=0, vmax=255)
 ax[1, 1].axis('off')
-ax[1, 1].set_title('Adaptive (n=100)')
+ax[1, 1].set_title('Hyper - negative + positive (n=50)')
 
 fig.tight_layout()
 plt.show()

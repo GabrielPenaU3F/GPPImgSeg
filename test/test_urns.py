@@ -32,6 +32,14 @@ def simple_2x2_tracking():
     probs /= probs.sum(axis=2, keepdims=True)
     return probs
 
+@pytest.fixture
+def reinforcement_minimal_testcase():
+    urn = np.array([[[10, 10]]], dtype=float)  # shape (1,1,2)
+    sampled = np.array([[0]])                  # shape (1,1)
+    R = np.array([[5, -3],
+                  [-2, 7]], dtype=float)
+    return urn, sampled, R
+
 class TestUrnInicialization:
 
     def test_initialize_urns_total_balls_preserved(self):
@@ -239,10 +247,11 @@ class TestGPPUrnUpdate:
         neighborhood = Neighborhood('8')
         initial_total_balls = 50
         R = np.eye(k)
-        labeler = GPPLabeler()
+        labeler_1 = GPPLabeler(seed=42)
+        labeler_2 = GPPLabeler(seed=42)
 
         # A) 50 iterations in one run
-        urns_50 = labeler.label(
+        urns_50 = labeler_1.label(
             input=probs0.copy(),
             input_type='probs',
             neighborhood=neighborhood,
@@ -250,12 +259,11 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=50,
             return_type='urns',
-            seed=42,
             verbose=False
         )
 
         # B) 20 iterations, then 30, preserving urns
-        urns_20 = labeler.label(
+        urns_20 = labeler_2.label(
             input=probs0.copy(),
             input_type='probs',
             neighborhood=neighborhood,
@@ -263,11 +271,10 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=20,
             return_type='urns',
-            seed=42,
             verbose=False
         )
 
-        urns_20_30 = labeler.label(
+        urns_20_30 = labeler_2.label(
             input=urns_20,  # << URNS, not probs
             input_type='urns',
             neighborhood=neighborhood,
@@ -275,7 +282,6 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=30,
             return_type='urns',
-            seed=42,
             verbose=False
         )
 
@@ -289,9 +295,10 @@ class TestGPPUrnUpdate:
         neighborhood = Neighborhood('8')
         initial_total_balls = 50
         R = np.eye(k)
-        labeler = GPPLabeler()
+        labeler_1 = GPPLabeler(seed=42)
+        labeler_2 = GPPLabeler(seed=42)
 
-        urns_50 = labeler.label(
+        urns_50 = labeler_1.label(
             input=probs0.copy(),
             input_type='probs',
             neighborhood=neighborhood,
@@ -299,12 +306,11 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=50,
             return_type='urns',
-            seed=42,
             verbose=False
         )
 
         # 20 iterations → probs
-        probs_20 = labeler.label(
+        probs_20 = labeler_2.label(
             input=probs0.copy(),
             input_type='probs',
             neighborhood=neighborhood,
@@ -312,12 +318,11 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=20,
             return_type='probs',
-            seed=42,
             verbose=False
         )
 
         # Reinitialize from probs should produce a different state
-        urns_reinit = labeler.label(
+        urns_reinit = labeler_2.label(
             input=probs_20,
             input_type='probs',  # << reinicio incorrecto
             neighborhood=neighborhood,
@@ -325,7 +330,6 @@ class TestGPPUrnUpdate:
             R=R,
             n_iter=30,
             return_type='urns',
-            seed=42,
             verbose=False
         )
 
@@ -357,10 +361,41 @@ class TestGPPUrnUpdate:
 
 class TestReinforcementScheme:
 
+    def test_R_applied_correctly(self, reinforcement_minimal_testcase):
+        urn, sampled, R = reinforcement_minimal_testcase
+        labeler = GPPLabeler()
+        updated = labeler.update_urns(urn, sampled, R)[0, 0]
+
+        assert np.allclose(updated, np.array([15, 7]))
+
+    def test_R_accumulates_over_iterations(self, reinforcement_minimal_testcase):
+        urn, _, R = reinforcement_minimal_testcase
+        sampled_classes = [0, 0]
+        labeler = GPPLabeler()
+
+        for s in sampled_classes:
+            urn = labeler.update_urns(urn, np.array([[s]]), R)
+
+        expected = np.array([[[20, 4]]])
+        assert np.allclose(urn, expected)
+
+    def test_R_row_selection(self, reinforcement_minimal_testcase):
+        urn, _, _ = reinforcement_minimal_testcase
+        R = np.array([[+10, -1],
+                      [-20, +3]])
+        labeler = GPPLabeler()
+
+        # Si sampleamos clase 1, debe sumar R[1]
+        updated = labeler.update_urns(urn, np.array([[1]]), R)[0, 0]
+
+        expected = np.array([0, 10 + 3])  # [-10, 13]
+
+        assert np.allclose(updated, expected), \
+            f"Expected [-10,13], got {updated}"
+
     def test_fixed_R(self, simple_2x2_tracking):
         labeler = GPPLabeler()
         R = np.eye(2)
-        seed = 1
 
         urns = labeler.label(
             simple_2x2_tracking,
@@ -370,13 +405,12 @@ class TestReinforcementScheme:
             n_iter=5,
             input_type='probs',
             return_type='urns',
-            seed=seed,
         )
 
         # Exact expected urn
         expected_urns = np.array([
-            [[8, 7], [7, 8]],
-            [[8, 7], [1, 14]]
+            [[8, 7], [9, 6]],
+            [[5, 10], [5, 10]]
         ])
 
         assert np.array_equal(urns, expected_urns)

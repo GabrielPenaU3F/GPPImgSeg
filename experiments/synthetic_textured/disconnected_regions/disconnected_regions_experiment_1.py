@@ -37,8 +37,6 @@ plt.show()
 nmc_labels = NMCLabeler(seed).label(img, n_iter=10, n_classes=k, return_type='raw')
 nmc_img = align_labels(nmc_labels, ground_truth)
 
-fig1, ax = plt.subplots(1, 3, figsize=(12, 8))
-
 ml_probs = MLLabeler().label(img, nmc_labels, return_type='probs')
 ml_labels = label_image_from_probabilities(ml_probs)
 ml_img = align_labels(ml_labels, ground_truth)
@@ -47,22 +45,22 @@ neighborhood = Neighborhood('radius', radius=4)
 rl_labels = RelaxationLabeler().label(ml_probs, neighborhood, n_iter=20, return_type='img')
 rl_img = align_labels(rl_labels, ground_truth)
 
-polya_labels = PolyaLabeler().label(ml_probs, neighborhood, initial_total_balls=100, R=10, n_iter=30,
+polya_labels = PolyaLabeler(seed).label(ml_probs, neighborhood, initial_total_balls=100, R=10, n_iter=30,
                                     return_type='img')
 polya_img = align_labels(polya_labels, ground_truth)
 
 reinforcement_matrix_super = np.ones((3, 3)) + 8 * np.eye(3)
-gpp_superdif_labels = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
+gpp_superdif_labels = GPPLabeler(seed).label(ml_probs, neighborhood, initial_total_balls=100,
                                          R=reinforcement_matrix_super, n_iter=20, return_type='img')
 gpp_superdif_img = align_labels(gpp_superdif_labels, ground_truth)
 
 reinforcement_matrix_sub = np.ones((3, 3))
-gpp_subdif_labels = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
+gpp_subdif_labels = GPPLabeler(seed).label(ml_probs, neighborhood, initial_total_balls=100,
                                        R=reinforcement_matrix_sub, n_iter=20, return_type='img')
 gpp_subdif_img = align_labels(gpp_subdif_labels, ground_truth)
 
 reinforcement_matrix_hyper = -5 * np.ones((3, 3)) + 25 * np.eye(3)
-gpp_hyper_labels = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
+gpp_hyper_labels = GPPLabeler(seed).label(ml_probs, neighborhood, initial_total_balls=100,
                                       R=reinforcement_matrix_hyper, n_iter=20, return_type='img')
 gpp_hyper_img = align_labels(gpp_hyper_labels, ground_truth)
 

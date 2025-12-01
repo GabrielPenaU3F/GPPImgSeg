@@ -6,9 +6,9 @@ from segmentation.methods.nmc_labeler import NMCLabeler
 from segmentation.methods.rl_labeler import RelaxationLabeler
 from segmentation.methods.urn_labelers import PolyaLabeler, GPPLabeler
 from segmentation.neighborhood import Neighborhood
-from utilities import format_labeled_image, label_image_from_probabilities
 from synthesizers.noise_generators import add_salt_pepper_noise
 from synthesizers.voronoi_regions_generator import generate_regions_voronoi
+from utilities.image_format_utilities import format_labeled_image, label_image_from_probabilities
 
 k = 6 # Number of regions
 img = generate_regions_voronoi(256, 256, n_regions=k, seed=123)
@@ -24,7 +24,7 @@ neighborhood = Neighborhood('radius', radius=4)
 rl_img = RelaxationLabeler().label(ml_probs, neighborhood, n_iter=20, return_type='img')
 
 polya_img = PolyaLabeler().label(ml_probs, neighborhood, initial_total_balls=100, R=10, n_iter=20,
-                                                 return_type='img')
+                                 return_type='img')
 
 reinforcement_matrix_super = np.ones((6, 6)) + 8 * np.eye(6)
 gpp_superdif_img = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,

@@ -54,33 +54,33 @@ rl_img_200 = align_labels(rl_labels_200, ground_truth)
 reinforcement_matrix_hyper = -5 * np.ones((3, 3)) + 25 * np.eye(3)
 
 # 20 iterations
-hyper_urns_20 = GPPLabeler().label(ml_probs, neighborhood, initial_total_balls=100,
-                                   R=reinforcement_matrix_hyper, n_iter=20, return_type='urns', input_type='probs',
-                                   seed=42)
+labeler_20 = GPPLabeler(seed)
+hyper_urns_20 = labeler_20.label(ml_probs, neighborhood, initial_total_balls=100,
+                                   R=reinforcement_matrix_hyper, n_iter=20, return_type='urns', input_type='probs')
 hyper_probs_20 = hyper_urns_20 / hyper_urns_20.sum(axis=2, keepdims=True)
 hyper_labels_20 = label_image_from_probabilities(hyper_probs_20)
 hyper_img_20 = align_labels(hyper_labels_20, ground_truth)
 
 # 50 iterations
-hyper_urns_50 = GPPLabeler().label(hyper_urns_20, neighborhood, initial_total_balls=None,
-                                   R=reinforcement_matrix_hyper, n_iter=30, return_type='urns', input_type='urns',
-                                   seed=42)
+labeler_50 = GPPLabeler(seed)
+hyper_urns_50 = labeler_50.label(hyper_urns_20, neighborhood, initial_total_balls=None,
+                                   R=reinforcement_matrix_hyper, n_iter=30, return_type='urns', input_type='urns')
 hyper_probs_50 = hyper_urns_50 / hyper_urns_50.sum(axis=2, keepdims=True)
 hyper_labels_50 = label_image_from_probabilities(hyper_probs_50)
 hyper_img_50 = align_labels(hyper_labels_50, ground_truth)
 
 # 100 iterations
-hyper_urns_100 = GPPLabeler().label(hyper_urns_50, neighborhood, initial_total_balls=None,
-                                   R=reinforcement_matrix_hyper, n_iter=50, return_type='urns', input_type='urns',
-                                   seed=42)
+labeler_100 = GPPLabeler(seed)
+hyper_urns_100 = labeler_100.label(hyper_urns_50, neighborhood, initial_total_balls=None,
+                                   R=reinforcement_matrix_hyper, n_iter=50, return_type='urns', input_type='urns')
 hyper_probs_100 = hyper_urns_100 / hyper_urns_100.sum(axis=2, keepdims=True)
 hyper_labels_100 = label_image_from_probabilities(hyper_probs_100)
 hyper_img_100 = align_labels(hyper_labels_100, ground_truth)
 
 # 200 iterations
-hyper_urns_200 = GPPLabeler().label(hyper_urns_100, neighborhood, initial_total_balls=None,
-                                   R=reinforcement_matrix_hyper, n_iter=100, return_type='urns', input_type='urns',
-                                   seed=42)
+labeler_200 = GPPLabeler(seed)
+hyper_urns_200 = labeler_200.label(hyper_urns_100, neighborhood, initial_total_balls=None,
+                                   R=reinforcement_matrix_hyper, n_iter=100, return_type='urns', input_type='urns')
 hyper_probs_200 = hyper_urns_200 / hyper_urns_200.sum(axis=2, keepdims=True)
 hyper_labels_200 = label_image_from_probabilities(hyper_probs_200)
 hyper_img_200 = align_labels(hyper_labels_200, ground_truth)
@@ -124,7 +124,7 @@ ax[3, 1].set_title('Hyperballistic (n=100)')
 
 ax[4, 0].imshow(rl_img_200, cmap='gray', vmin=0, vmax=255)
 ax[4, 0].axis('off')
-ax[4, 0].set_title('RL (n=20)')
+ax[4, 0].set_title('RL (n=200)')
 
 ax[4, 1].imshow(hyper_img_200, cmap='gray', vmin=0, vmax=255)
 ax[4, 1].axis('off')
