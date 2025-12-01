@@ -21,7 +21,7 @@ class UrnLabeler(ABC):
         else:
             raise ValueError("input_type must be 'probs' or 'urns'")
 
-        self.validate_R(R, urns)
+        self.validate_R(R, urns.shape[-1])
 
         for n in range(n_iter):
             if verbose is True:
@@ -34,9 +34,11 @@ class UrnLabeler(ABC):
             super_urns = neighbor_urn_stack.sum(axis=2)  # (h, w, k)
             super_urn_probs = super_urns / super_urns.sum(axis=2, keepdims=True)
             sampled_classes = sample_class_from_probs(super_urn_probs, seed=seed)
+            if n==4:
+                a=2
 
             if callable(R):
-                R_val = R(n, super_urn_probs)
+                R_val = R(n)
             else:
                 R_val = R
             urns = self.update_urns(urns, sampled_classes, R_val)
@@ -64,13 +66,11 @@ class UrnLabeler(ABC):
     def update_urns(self, urns, sampled_classes, delta):
         pass
 
-    def validate_R(self, R_arg, urns):
-
-        k = urns.shape[-1]
+    def validate_R(self, R_arg, k):
 
         # Case 1: R is a function
         if callable(R_arg):
-            R = R_arg(-1, urns)
+            R = R_arg(-1)
             R = np.array(R)
 
         # Case 2: R is a square matrix
@@ -80,13 +80,16 @@ class UrnLabeler(ABC):
         else:
             raise TypeError('R must be a function or a matrix-like')
 
-        # Validate shape and type
+        # Validate shape, type and extra conditions
         if not R.shape == (k, k):
             raise ValueError('Reinforcement matrix shape is not correct')
 
         if not np.array_equal(R, R.astype(int)):
             raise ValueError('Reinforcement matrix must only contain integers')
 
+        row_sums = R.sum(axis=1)
+        if not np.all(row_sums == row_sums[0]):
+            raise ValueError('All rows must sum to the same total')
 
 
 class PolyaLabeler(UrnLabeler):
@@ -122,7 +125,6 @@ class GPPLabeler(UrnLabeler):
             Updated urns with same shape as input.
         """
 
-        self.validate_reinforcement_matrix(R)
         R = R.astype(np.int64)
         h, w, k = urns.shape
         urns_flat = urns.reshape(-1, k)
@@ -135,23 +137,10 @@ class GPPLabeler(UrnLabeler):
         # --- Prevent negative counts, this could happen with negative reinforcement ---
         urns_flat = np.maximum(urns_flat, 0)
 
+        # Ensure no urn becomes fully empty
+        row_sums = urns_flat.sum(axis=1)
+        empty_mask = (row_sums == 0)
+        if np.any(empty_mask):
+            urns_flat[empty_mask] = 1
+
         return urns_flat.reshape(h, w, k)
-
-    def validate_reinforcement_matrix(self, delta):
-
-        # Check if it is a matrix
-        if not delta.ndim == 2:
-            raise ValueError('Delta must be a 2D array')
-
-        # Check that it is square
-        if not delta.shape[0] == delta.shape[1]:
-            raise ValueError('Delta must be a square matrix')
-
-        # Check that it only contains integers
-        if not np.all(np.equal(np.mod(delta, 1), 0)):
-            raise ValueError('Delta must contain only integers')
-
-        # Check that all rows sum to the same integer value b
-        sums = np.sum(delta, axis=1)
-        if not np.all(sums == sums[0]):
-            raise ValueError('All rows must sum to the same total')

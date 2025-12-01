@@ -99,42 +99,39 @@ class TestUrnArguments:
                           R=np.eye(2, 2),
                           return_type=1)
 
+
+class TestValidateReinforcementMatrix:
+
     def test_R_function_must_return_matrix(self):
-        h, w, k = 10, 10, 3
-        probs = np.ones((h, w, k)) / k
         labeler = GPPLabeler()
 
-        def bad_R(n, urns):
-            return 123  # invalid
+        # The function must return a matrix
+        with pytest.raises(ValueError, match='Reinforcement matrix shape is not correct'):
+            labeler.validate_R(lambda x: 123, 3)
+
+    def test_R_must_be_a_square_matrix(self):
+        labeler = GPPLabeler()
+        bad_R = np.array([[1, 2, 3], [1, 2, 3]])
 
         with pytest.raises(ValueError, match='Reinforcement matrix shape is not correct'):
-            labeler.label(
-                probs,
-                neighborhood=1,
-                initial_total_balls=5,
-                R=bad_R,
-                n_iter=5,
-                input_type='probs',
-                return_type='probs'
-            )
+            labeler.validate_R(bad_R, 3)
 
     def test_R_must_only_contain_integers(self):
-        h, w, k = 10, 10, 3
-        probs = np.ones((h, w, k)) / k
         labeler = GPPLabeler()
-
         bad_R = 0.5 * np.eye(3)
 
         with pytest.raises(ValueError, match='Reinforcement matrix must only contain integers'):
-            labeler.label(
-                probs,
-                neighborhood=1,
-                initial_total_balls=5,
-                R=bad_R,
-                n_iter=5,
-                input_type='probs',
-                return_type='probs'
-            )
+            labeler.validate_R(bad_R, 3)
+
+    def test_validate_reinforcement_matrix_raises_error_if_rows_dont_sum_equal(self):
+        labeler = GPPLabeler()
+        bad_R = np.array([
+            [2, 0, 0],
+            [1, 1, 0],
+            [0, 0, 3]  # This one sums 3
+        ])
+        with pytest.raises(ValueError, match='All rows must sum to the same total'):
+            labeler.validate_R(bad_R, 3)
 
 class TestPolyaUrnUpdate:
 
@@ -176,25 +173,6 @@ class TestPolyaUrnUpdate:
 
 
 class TestGPPUrnUpdate:
-
-    def test_validate_reinforcement_matrix_is_square(self):
-        R = np.array([[2, 2, 0], [1, 1, 0]])
-        with pytest.raises(ValueError, match='Delta must be a square matrix'):
-            GPPLabeler().validate_reinforcement_matrix(R)
-
-    def test_validate_reinforcement_matrix_contains_only_integers(self):
-        R = np.array([[2.5, 2], [1, 1]])
-        with pytest.raises(ValueError, match='Delta must contain only integers'):
-            GPPLabeler().validate_reinforcement_matrix(R)
-
-    def test_validate_reinforcement_matrix_raises_error_if_rows_dont_sum_equal(self):
-        R = np.array([
-            [2, 0, 0],
-            [1, 1, 0],
-            [0, 0, 3]  # This one sums 3
-        ])
-        with pytest.raises(ValueError, match='All rows must sum to the same total'):
-            GPPLabeler().validate_reinforcement_matrix(R)
 
     def test_update_urns_vectorial_delta_uniform(self):
         urns = np.ones((2, 2, 3), dtype=int)
@@ -355,6 +333,27 @@ class TestGPPUrnUpdate:
         diff = np.abs(urns_50 - urns_reinit).mean()
         assert diff > 1.0, "Reinitializing urns from probs should break equivalence"
 
+    def test_urns_never_empty(self):
+        """
+        If reinforcement produces a fully empty urn, the algorithm must ensure
+        that the urn contains at least 1 ball in total.
+        """
+
+        urns = np.array([[[1, 0, 0]]], dtype=int)
+        sampled_classes = np.array([[1]])
+        R = np.array([  # Extreme negative reinforcement
+            [-1, -1, -1],
+            [-1, -1, -1],
+            [-1, -1, -1]
+        ])
+
+        labeler = GPPLabeler()
+        updated = labeler.update_urns(urns, sampled_classes, R)
+
+        # Urn should be empty, but the algorithm must prevent this
+        # Our choice is to force a 'minimal uniform state' in this case: 1 ball in each class
+        np.testing.assert_array_equal(updated, np.ones_like(urns))
+
 
 class TestReinforcementScheme:
 
@@ -389,10 +388,9 @@ class TestReinforcementScheme:
         n_iter = 15
         calls = []
 
-        def R_func(n, urns):
+        def R_func(n):
             calls.append(n)
-            k = urns.shape[2]
-            return np.eye(k)
+            return np.eye(2)
 
         labeler.label(
             simple_2x2_tracking,
@@ -416,7 +414,7 @@ class TestReinforcementScheme:
         probs /= probs.sum(axis=2, keepdims=True)
         labeler = GPPLabeler()
 
-        def R_polya_then_soft(n, urns):
+        def R_polya_then_soft(n):
             if n < 10:
                 return np.eye(2)  # aggresive
             else:

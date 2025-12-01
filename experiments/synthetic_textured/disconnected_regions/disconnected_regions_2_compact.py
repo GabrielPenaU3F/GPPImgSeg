@@ -22,8 +22,6 @@ img, ground_truth = generator.generate_textured_image(size=(256, 256), n_regions
 nmc_labels = NMCLabeler(seed).label(img, n_iter=10, n_classes=k, return_type='raw')
 nmc_img = align_labels(nmc_labels, ground_truth)
 
-fig1, ax = plt.subplots(1, 3, figsize=(12, 8))
-
 ml_probs = MLLabeler().label(img, nmc_labels, return_type='probs')
 ml_labels = label_image_from_probabilities(ml_probs)
 ml_img = align_labels(ml_labels, ground_truth)
