@@ -31,7 +31,7 @@ class FBMImageGenerator:
         fbm /= fbm.max()
         return fbm
 
-    def generate_fbm_image(self, size, n_regions, H, seed=None):
+    def generate_fbm_image(self, size, n_regions, H, base_intensities=None, seed=None):
         """
         Generate an image composed of several vertical regions,
         each with an fBm of different H.
@@ -56,6 +56,11 @@ class FBMImageGenerator:
         if len(H) != n_regions:
             raise ValueError('H must be a list of length n_regions')
 
+        if base_intensities is None:
+            base_intensities = np.linspace(20, 235, n_regions)
+        else:
+            base_intensities = np.array(base_intensities, dtype=int)
+
         h, w = size
         rng = np.random.default_rng(seed)
         # We use a different seed for each region
@@ -79,8 +84,9 @@ class FBMImageGenerator:
         img -= img.min()
         img /= img.max()
         img *= 255.0
+        ground_truth = base_intensities[labels].reshape(h, w).astype(np.float32)
 
-        return img, labels
+        return img, ground_truth
 
 
 if __name__ == '__main__':

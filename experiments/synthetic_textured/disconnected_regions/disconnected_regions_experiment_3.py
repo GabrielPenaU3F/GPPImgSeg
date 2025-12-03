@@ -34,7 +34,6 @@ rl_probs = RelaxationLabeler().label(ml_probs, neighborhood, n_iter=50, return_t
 rl_labels = label_image_from_probabilities(rl_probs)
 rl_img = align_labels(rl_labels, ground_truth)
 
-# Negative reinforcement on the minoritarian neighbors works wonders
 R_1 = -200 * np.ones((3, 3)) + 200 * np.eye(3)
 R_2 = -200 * np.ones((3, 3)) + 400 * np.eye(3)
 
