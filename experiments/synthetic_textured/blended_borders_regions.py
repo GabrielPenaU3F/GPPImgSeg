@@ -5,7 +5,7 @@ from segmentation.methods.nmc_labeler import NMCLabeler
 from segmentation.methods.rl_labeler import RelaxationLabeler
 from segmentation.methods.urn_labelers import GPPLabeler
 from segmentation.neighborhood import Neighborhood
-from synthesizers.fbm_image_generator import FBMImageGenerator
+from synthesizers.blended_borders_image_generator import BlendedBordersImageGenerator
 
 from matplotlib import pyplot as plt
 
@@ -13,10 +13,9 @@ from utilities.image_format_utilities import align_labels, label_image_from_prob
 
 k = 4
 seed = 42
-img, ground_truth = FBMImageGenerator().generate_fbm_image(
+img, ground_truth = BlendedBordersImageGenerator().generate_blended_borders_image(
     size=(256, 256),
     n_regions=k,
-    H=[0.2, 0.5, 0.8, 1.2],
     seed=seed
 )
 n_iter = 50

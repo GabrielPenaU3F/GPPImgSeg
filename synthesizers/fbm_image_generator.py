@@ -6,7 +6,7 @@ from synthesizers.voronoi_regions_generator import generate_regions_voronoi
 
 class FBMImageGenerator:
 
-    def generate_fbm_region(self, H, size, seed=None):
+    def generate_fbm_texture(self, H, size, seed=None):
         """
         Generate a fractional Brownian motion texture with exponent H.
         Fast implementation using frequency-domain filtering.
@@ -77,7 +77,7 @@ class FBMImageGenerator:
                 continue
 
             # Fill the image in the corresponding region
-            fbm_full = self.generate_fbm_region(H[i], (h, w), seed=seeds[i])
+            fbm_full = self.generate_fbm_texture(H[i], (h, w), seed=seeds[i])
             img[mask] = fbm_full[mask]
 
         # Normalize final output

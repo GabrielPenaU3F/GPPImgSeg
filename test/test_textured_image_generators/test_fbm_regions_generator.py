@@ -13,7 +13,7 @@ class TestGenerateFBMRegion:
     def test_generate_fbm_basic_properties(self, gen):
         H = 0.7
         size = (64, 64)
-        fbm = gen.generate_fbm_region(H, size, seed=123)
+        fbm = gen.generate_fbm_texture(H, size, seed=123)
 
         assert fbm.shape == size
         assert np.isfinite(fbm).all(), "The FBM must contain only finite values"
@@ -23,16 +23,16 @@ class TestGenerateFBMRegion:
     def test_generate_fbm_seed_reproducibility(self, gen):
         size = (64, 64)
         H = 0.5
-        fbm1 = gen.generate_fbm_region(H, size, seed=111)
-        fbm2 = gen.generate_fbm_region(H, size, seed=111)
+        fbm1 = gen.generate_fbm_texture(H, size, seed=111)
+        fbm2 = gen.generate_fbm_texture(H, size, seed=111)
 
         assert np.allclose(fbm1, fbm2)
 
     def test_generate_fbm_seed_different_outputs(self, gen):
         size = (64, 64)
         H = 0.5
-        fbm1 = gen.generate_fbm_region(H, size, seed=111)
-        fbm2 = gen.generate_fbm_region(H, size, seed=222)
+        fbm1 = gen.generate_fbm_texture(H, size, seed=111)
+        fbm2 = gen.generate_fbm_texture(H, size, seed=222)
 
         assert not np.allclose(fbm1, fbm2)
 

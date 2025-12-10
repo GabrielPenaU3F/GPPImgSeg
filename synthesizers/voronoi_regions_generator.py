@@ -31,9 +31,9 @@ def generate_regions_voronoi(size, n_regions=6, return_type='img', seed=None):
 
     # 4) Build image
     if n_regions == 1:
-        gray_levels = np.array([128], dtype=np.uint8)
+        gray_levels = np.array([128], dtype=np.float32)
     else:
-        gray_levels = np.linspace(30, 225, n_regions).astype(np.uint8)
+        gray_levels = np.linspace(30, 225, n_regions).astype(np.float32)
     img = gray_levels[labels]
 
     if return_type == 'img':

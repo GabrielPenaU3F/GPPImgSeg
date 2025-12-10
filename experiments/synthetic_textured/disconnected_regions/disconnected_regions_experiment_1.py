@@ -41,7 +41,7 @@ ml_probs = MLLabeler().label(img, nmc_labels, return_type='probs')
 ml_labels = label_image_from_probabilities(ml_probs)
 ml_img = align_labels(ml_labels, ground_truth)
 
-neighborhood = Neighborhood('radius', radius=4)
+neighborhood = Neighborhood('radius', radius=3)
 rl_labels = RelaxationLabeler().label(ml_probs, neighborhood, n_iter=20, return_type='img')
 rl_img = align_labels(rl_labels, ground_truth)
 

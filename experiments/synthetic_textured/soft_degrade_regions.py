@@ -9,14 +9,14 @@ from synthesizers.fbm_image_generator import FBMImageGenerator
 
 from matplotlib import pyplot as plt
 
+from synthesizers.soft_degrade_image_generator import SoftDegradeImageGenerator
 from utilities.image_format_utilities import align_labels, label_image_from_probabilities
 
 k = 4
 seed = 42
-img, ground_truth = FBMImageGenerator().generate_fbm_image(
+img, ground_truth = SoftDegradeImageGenerator().generate_soft_degrade_image(
     size=(256, 256),
     n_regions=k,
-    H=[0.2, 0.5, 0.8, 1.2],
     seed=seed
 )
 n_iter = 50
@@ -32,7 +32,7 @@ ml_img = align_labels(ml_labels, ground_truth)
 
 # --- Relaxation ---
 
-neighborhood = Neighborhood('radius', radius=3)
+neighborhood = Neighborhood('radius', radius=6)
 
 rl_probs = RelaxationLabeler().label(ml_probs, neighborhood, n_iter=n_iter, return_type='probs')
 rl_labels = label_image_from_probabilities(rl_probs)

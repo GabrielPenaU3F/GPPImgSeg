@@ -35,7 +35,7 @@ def add_salt_pepper_noise(img, salt_prob=0.01, pepper_prob=0.01, seed=None):
 
 # Usage example
 if __name__ == "__main__":
-    img = generate_regions_voronoi(256, 256, n_regions=6, seed=123)
+    img = generate_regions_voronoi(size=(256, 256), n_regions=6, seed=123)
     noisy_img = add_salt_pepper_noise(img, salt_prob=0.02, pepper_prob=0.02, seed=42)
 
     plt.figure(figsize=(10, 5))
